@@ -41,6 +41,7 @@ jobs:
         import os
         from google.oauth2.service_account import Credentials
         from googleapiclient.discovery import build
+        from googleapiclient.http import MediaFileUpload
 
         # Authenticate with the service account
         credentials = Credentials.from_service_account_file('/tmp/service_account.json')
