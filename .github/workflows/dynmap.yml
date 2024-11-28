@@ -31,7 +31,7 @@ jobs:
     - name: Capture cr spawn
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-        !dynmap-lens.py -v https://dynmap.cubekrowd.net/ creative flat [0,64,0] [1,1] 5 assets/Spawn-${timestamp}.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ creative flat [0,64,0] [1,1] 5 assets/Spawn-${timestamp}.png
 
     - name: Commit and push changes
       run: |
