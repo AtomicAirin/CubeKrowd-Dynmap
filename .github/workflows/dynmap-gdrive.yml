@@ -2,8 +2,8 @@ name: Dynmap to Drive
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '50 * * * *'
+  schedule:
+    - cron: '50 * * * *'
 
 jobs:
   update-dynmap-images:
