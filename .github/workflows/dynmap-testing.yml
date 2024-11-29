@@ -1,4 +1,4 @@
-name: Dynmap to Drive
+name: TEST Dynmap to Drive
 
 on:
   workflow_dispatch:
