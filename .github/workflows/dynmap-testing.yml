@@ -29,10 +29,8 @@ jobs:
     - name: Capture cr spawn
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ creative flat [-200,64,-250] [40,40] 2 assets/Flat_2_40.png
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ creative surface [-200,64,-250] [55,55] 2 assets/Surface_2_55.png
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ creative flat [-400,64,-500] [20,20] 3 assets/Flat_3_20.png
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ creative flat [-400,64,-500] [25,25] 3 assets/Surface_3_25.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ creative surface [-200,64,-250] [60,60] 2 assets/Surface_2_60.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ creative surface [-400,64,-500] [30,30] 3 assets/Surface_3_30.png
 
     - name: Upload to Google Drive
       env:
