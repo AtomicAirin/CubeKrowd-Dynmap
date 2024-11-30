@@ -3,7 +3,7 @@ name: Dynmap to Drive
 on:
   workflow_dispatch:
   schedule:
-    - cron: '50 * * * *'
+    - cron: '0 */6 * * *'
 
 jobs:
   update-dynmap-images:
@@ -28,10 +28,11 @@ jobs:
         mkdir -p assets
         rm -f assets/*
 
-    - name: Capture cr spawn
+    - name: Capture su1
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ creative flat [0,64,0] [1,1] 5 assets/Spawn-${timestamp}.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [-200,64,-250] [20,20] 2 assets/suFlat-${timestamp}.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival surface [-200,64,-250] [30,30] 2 assets/suSurface-${timestamp}.png
 
     - name: Upload to Google Drive
       env:
