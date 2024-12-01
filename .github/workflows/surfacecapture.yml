@@ -1,0 +1,106 @@
+name: Capture and Process su Surface
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '50 * * * *'
+
+jobs:
+  process-suSurfaceHD:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install dynmap_lens google-auth google-auth-oauthlib google-api-python-client pillow
+
+    - name: Create or clear assets directory
+      run: |
+        mkdir -p assets
+        rm -f assets/*
+
+    - name: Capture suSurfaceHD
+      run: |
+        timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
+        echo "timestamp=$timestamp" >> $GITHUB_ENV
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival surface [-200,64,-250] [116,116] 1 assets/suSurfaceHD-${timestamp}.png
+
+    - name: Upload and process with master
+      env:
+        GDRIVE_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT }}
+      run: |
+        echo "$GDRIVE_KEY" > /tmp/service_account.json
+
+        python <<EOF
+        import os
+        from datetime import datetime
+        from google.oauth2.service_account import Credentials
+        from googleapiclient.discovery import build
+        from PIL import Image, ImageChops
+
+        # Authenticate with the service account
+        credentials = Credentials.from_service_account_file('/tmp/service_account.json')
+        drive_service = build('drive', 'v3', credentials=credentials)
+
+        # Define the folder ID (replace with your folder ID)
+        folder_id = "1cbUN2hhnB7euzZ3HmVcUjXq-Ve4pT6rV"
+
+        # Get the timestamp
+        timestamp = os.getenv('TIMESTAMP')
+
+        # Check for an existing master file
+        results = drive_service.files().list(
+            q=f"'me' in owners and name contains 'suSurfaceHD' and name contains '-master'",
+            fields="files(id, name)"
+        ).execute()
+        master_file = next(iter(results.get('files', [])), None)
+
+        # Path to the new image
+        new_image_path = f'assets/suSurfaceHD-{timestamp}.png'
+        new_master_path = f'assets/suSurfaceHD-{timestamp}-master.png'
+
+        # If no master exists, save the new image as master and copy
+        if not master_file:
+            os.rename(new_image_path, new_master_path)
+            # Upload both files
+            for file_path in [new_image_path, new_master_path]:
+                file_metadata = {'name': os.path.basename(file_path), 'parents': [folder_id]}
+                media = MediaFileUpload(file_path, mimetype='image/png')
+                drive_service.files().create(body=file_metadata, media_body=media).execute()
+        else:
+            # Download the master file
+            master_id = master_file['id']
+            master_path = 'assets/master.png'
+            request = drive_service.files().get_media(fileId=master_id)
+            with open(master_path, 'wb') as f:
+                f.write(request.execute())
+
+            # Compare and create the delta image
+            master_img = Image.open(master_path).convert("RGBA")
+            new_img = Image.open(new_image_path).convert("RGBA")
+            delta_img = ImageChops.difference(master_img, new_img)
+            delta_img = delta_img.convert("RGBA")  # Ensure proper format
+
+            # Save the delta and new master locally
+            delta_path = f'assets/suSurfaceHD-{timestamp}.png'
+            delta_img.save(delta_path, "PNG")
+            os.rename(new_image_path, new_master_path)
+
+            # Upload the delta and new master
+            for file_path in [delta_path, new_master_path]:
+                file_metadata = {'name': os.path.basename(file_path), 'parents': [folder_id]}
+                media = MediaFileUpload(file_path, mimetype='image/png')
+                drive_service.files().create(body=file_metadata, media_body=media).execute()
+
+            # Delete the old master
+            drive_service.files().delete(fileId=master_id).execute()
+        EOF
