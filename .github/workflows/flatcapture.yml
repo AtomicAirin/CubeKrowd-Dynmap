@@ -2,8 +2,8 @@ name: Capture and Process su Flat
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '55 * * * *'
+  # schedule:
+  #   - cron: '55 * * * *'
 
 jobs:
   process-suFlatHD:
@@ -32,7 +32,7 @@ jobs:
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
         echo "timestamp=$timestamp" >> $GITHUB_ENV
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [-200,64,-250] [40,40] 2 assets/suFlatHD-${timestamp}.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [-200,64,-250] [20,20] 2 assets/suFlatHD-${timestamp}.png
 
     - name: Upload and process with master
       env:
@@ -46,6 +46,7 @@ jobs:
         from datetime import datetime
         from google.oauth2.service_account import Credentials
         from googleapiclient.discovery import build
+        from googleapiclient.http import MediaFileUpload  
         from PIL import Image, ImageChops
 
         # Authenticate with the service account
