@@ -2,8 +2,8 @@ name: Capture and Process su Flat
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '40 * * * *'
+  schedule:
+    - cron: '55 * * * *'
 
 jobs:
   process-suFlatHD:
