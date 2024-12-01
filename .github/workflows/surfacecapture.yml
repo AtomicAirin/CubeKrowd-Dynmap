@@ -72,8 +72,12 @@ jobs:
 
         # If no master exists, save the new image as master and copy
         if not master_file:
-            os.rename(new_image_path, new_master_path)
-            # Upload both files
+            # Copy the new image as the master
+            new_master_path = f'assets/suSurfaceHD-{timestamp}-master.png'
+            import shutil
+            shutil.copyfile(new_image_path, new_master_path)
+        
+            # Upload the new image and the new master
             for file_path in [new_image_path, new_master_path]:
                 file_metadata = {'name': os.path.basename(file_path), 'parents': [folder_id]}
                 media = MediaFileUpload(file_path, mimetype='image/png')
