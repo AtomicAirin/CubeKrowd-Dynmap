@@ -32,7 +32,7 @@ jobs:
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
         echo "timestamp=$timestamp" >> $GITHUB_ENV
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [-200,64,-250] [80,80] 1 assets/suFlatHD-${timestamp}.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [-200,64,-250] [40,40] 2 assets/suFlatHD-${timestamp}.png
 
     - name: Upload and process with master
       env:
