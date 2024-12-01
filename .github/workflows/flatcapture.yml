@@ -37,6 +37,7 @@ jobs:
     - name: Upload and process with master
       env:
         GDRIVE_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT }}
+        TIMESTAMP: ${{ env.timestamp }}
       run: |
         echo "$GDRIVE_KEY" > /tmp/service_account.json
 
