@@ -31,7 +31,7 @@ jobs:
     - name: Capture su1
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [-200,64,-250] [20,20] 2 assets/suFlat-${timestamp}.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [-200,64,-250] [40,40] 2 assets/suFlat40-${timestamp}.png
         dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival surface [-200,64,-250] [30,30] 2 assets/suSurface-${timestamp}.png
 
     - name: Upload to Google Drive
