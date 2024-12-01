@@ -3,7 +3,7 @@ name: Capture and Process su Surface
 on:
   workflow_dispatch:
   schedule:
-    - cron: '50 * * * *'
+    - cron: '20 * * * *'
 
 jobs:
   process-suSurfaceHD:
