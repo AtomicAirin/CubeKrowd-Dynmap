@@ -59,22 +59,29 @@ jobs:
             grouped = []
             grouped_by_type = {'suFlat': {'Q1': [], 'Q2': [], 'Q3': [], 'Q4': []},
                                'suSurface': {'Q1': [], 'Q2': []}}
-
+        
             for file in files:
                 parts = file['name'].split('-')
+                print(f"Parts of {file['name']}: {parts}")  # Debugging line
+                
                 if len(parts) < 4 or not parts[3].endswith("delta.png"):
                     continue
-                quadrant, file_type, timestamp = parts[0], parts[1], '-'.join(parts[2:]).replace('-delta.png', '')
-
+        
+                # Adjusted to correctly parse based on the filename pattern
+                quadrant, file_type, timestamp = parts[0], parts[1], parts[2]
+        
                 if file_type in grouped_by_type and quadrant in grouped_by_type[file_type]:
                     grouped_by_type[file_type][quadrant].append((timestamp, file))
-
+        
+            print(f"Grouped files: {grouped_by_type}")  # Debugging line
+        
             for file_type, quadrants in grouped_by_type.items():
+                # Ensure there are no missing quadrants before creating groups
                 min_group_count = min(len(quadrants[key]) for key in quadrants)
                 for i in range(min_group_count):
                     group = {key: quadrants[key][i][1] for key in quadrants}
                     grouped.append((file_type, group))
-
+        
             return grouped
 
         def download_file(drive_service, file_id, file_name):
