@@ -2,8 +2,8 @@ name: Capture and Process su Surface
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '20 * * * *'
+  # schedule:
+  #   - cron: '20 * * * *'
 
 jobs:
   process-suSurfaceHD:
@@ -86,27 +86,40 @@ jobs:
             # Download the master file
             master_id = master_file['id']
             master_path = 'assets/master.png'
+            print(f"Downloading master file with ID: {master_id}")
             request = drive_service.files().get_media(fileId=master_id)
             with open(master_path, 'wb') as f:
-                f.write(request.execute())
-
+                file_data = request.execute()
+                f.write(file_data)
+            print(f"Downloaded master file to: {master_path}")
+        
+            # Ensure the master image exists and is opened correctly
+            if not os.path.exists(master_path):
+                raise FileNotFoundError(f"Master file was not downloaded correctly to: {master_path}")
+        
             # Compare and create the delta image
             master_img = Image.open(master_path).convert("RGBA")
             new_img = Image.open(new_image_path).convert("RGBA")
             delta_img = ImageChops.difference(master_img, new_img)
             delta_img = delta_img.convert("RGBA")  # Ensure proper format
-
+        
             # Save the delta and new master locally
-            delta_path = f'assets/suSurfaceHD-{timestamp}.png'
+            delta_path = f'assets/suSurfaceHD-{timestamp}-delta.png'
             delta_img.save(delta_path, "PNG")
+            print(f"Saved delta image to: {delta_path}")
+        
+            # Rename the new image as the master
             os.rename(new_image_path, new_master_path)
-
+            print(f"Renamed new image to master: {new_master_path}")
+        
             # Upload the delta and new master
             for file_path in [delta_path, new_master_path]:
                 file_metadata = {'name': os.path.basename(file_path), 'parents': [folder_id]}
                 media = MediaFileUpload(file_path, mimetype='image/png')
                 drive_service.files().create(body=file_metadata, media_body=media).execute()
-
+                print(f"Uploaded {file_path} to Google Drive")
+        
             # Delete the old master
             drive_service.files().delete(fileId=master_id).execute()
+            print(f"Deleted old master with ID: {master_id}")
         EOF
