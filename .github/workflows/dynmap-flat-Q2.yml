@@ -29,7 +29,7 @@ jobs:
     - name: Capture cr spawn
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [2554,64,-2532] [40,40] 1 assets/Q2-suFlat-${timestamp}.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [2564,64,-2532] [40,40] 1 assets/Q2-suFlat-${timestamp}.png
 
     - name: Upload to Google Drive
       env:
