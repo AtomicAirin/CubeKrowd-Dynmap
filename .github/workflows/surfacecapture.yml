@@ -2,8 +2,8 @@ name: Capture and Process su Surface
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '20 * * * *'
+  # schedule:
+  #   - cron: '20 * * * *'
 
 jobs:
   process-suSurfaceHD:
