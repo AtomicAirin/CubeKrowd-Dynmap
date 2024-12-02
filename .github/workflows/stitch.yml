@@ -23,7 +23,7 @@ jobs:
 
     - name: Stitch and Upload Images
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GDRIVE_SERVICE_ACCOUNT }}
+        GDRIVE_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT }}
         FOLDER_ID: '1cbUN2hhnB7euzZ3HmVcUjXq-Ve4pT6rV'
         UPLOAD_FOLDER_ID: '1cbUN2hhnB7euzZ3HmVcUjXq-Ve4pT6rV'
       run: |
