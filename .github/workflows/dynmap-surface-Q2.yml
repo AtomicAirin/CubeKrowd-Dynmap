@@ -26,10 +26,29 @@ jobs:
         mkdir -p assets
         rm -f assets/*
 
-    - name: Capture cr spawn
+    - name: Capture region
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
         dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival surface [2548,64,-2532] [58,58] 1 assets/Q2-suSurface-${timestamp}.png
+
+    - name: Crop image
+      run: |
+        python <<EOF
+        from PIL import Image
+        import os
+
+        # Locate the captured image
+        input_dir = "assets"
+        for filename in os.listdir(input_dir):
+            if filename.endswith(".png"):
+                input_path = os.path.join(input_dir, filename)
+
+                # Open the image and apply cropping (adjust cropping values as needed)
+                with Image.open(input_path) as img:
+                    width, height = img.size
+                    cropped = img.crop((64*6, 0, width, height))
+                    cropped.save(input_path)  # Overwrite the original file
+        EOF
 
     - name: Upload to Google Drive
       env:
