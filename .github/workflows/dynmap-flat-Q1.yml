@@ -1,4 +1,4 @@
- name: TEST Quadrant 1 Flat
+name: TEST Quadrant 1 Flat
 
 on:
   workflow_dispatch:
