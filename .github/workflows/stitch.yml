@@ -1,0 +1,148 @@
+name: Stitch Images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  stitch-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib Pillow
+
+    - name: Stitch and Upload Images
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GDRIVE_SERVICE_ACCOUNT }}
+        FOLDER_ID: '1cbUN2hhnB7euzZ3HmVcUjXq-Ve4pT6rV'
+        UPLOAD_FOLDER_ID: '1cbUN2hhnB7euzZ3HmVcUjXq-Ve4pT6rV'
+      run: |
+        python - <<'EOF'
+        import os
+        from google.oauth2.service_account import Credentials
+        from googleapiclient.discovery import build
+        from PIL import Image
+        import io
+        from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
+
+        Image.MAX_IMAGE_PIXELS = 933120000
+
+        DOWNLOAD_FOLDER = 'downloaded_images'
+        os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+
+        def authenticate_drive():
+            credentials = Credentials.from_service_account_file(os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
+            drive_service = build('drive', 'v3', credentials=credentials)
+            return drive_service
+        
+        def list_png_files(drive_service, folder_id):
+            query = f"'{folder_id}' in parents and mimeType='image/png' and name contains '-delta.png'"
+            results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+            files = results.get('files', [])
+            # Filter files that have valid quadrant identifiers (e.g., Q1, Q2, Q3, Q4)
+            valid_quadrant_files = [file for file in files if file['name'].split('-')[0] in {'Q1', 'Q2', 'Q3', 'Q4'}]
+            return valid_quadrant_files
+
+        def group_files_by_quadrants(files):
+            grouped = []
+            grouped_by_type = {'suFlat': {'Q1': [], 'Q2': [], 'Q3': [], 'Q4': []},
+                               'suSurface': {'Q1': [], 'Q2': []}}
+
+            for file in files:
+                parts = file['name'].split('-')
+                if len(parts) < 4 or not parts[3].endswith("delta.png"):
+                    continue
+                quadrant, file_type, timestamp = parts[0], parts[1], '-'.join(parts[2:]).replace('-delta.png', '')
+
+                if file_type in grouped_by_type and quadrant in grouped_by_type[file_type]:
+                    grouped_by_type[file_type][quadrant].append((timestamp, file))
+
+            for file_type, quadrants in grouped_by_type.items():
+                min_group_count = min(len(quadrants[key]) for key in quadrants)
+                for i in range(min_group_count):
+                    group = {key: quadrants[key][i][1] for key in quadrants}
+                    grouped.append((file_type, group))
+
+            return grouped
+
+        def download_file(drive_service, file_id, file_name):
+            request = drive_service.files().get_media(fileId=file_id)
+            local_path = os.path.join(DOWNLOAD_FOLDER, file_name)
+
+            with open(local_path, 'wb') as f:
+                downloader = MediaIoBaseDownload(f, request)
+                done = False
+                while not done:
+                    status, done = downloader.next_chunk()
+
+            return local_path
+
+        def stitch_images(file_type, group):
+            files = [group[key] for key in sorted(group.keys())]
+            quadrant_images = [Image.open(download_file(drive_service, file['id'], file['name'])) for file in files]
+            q1_img = quadrant_images[0]
+
+            if file_type == "suSurface":
+                q2_img = quadrant_images[1]
+                stitched_image = Image.new('RGBA', (2 * q1_img.width, q1_img.height))
+                stitched_image.paste(q1_img, (0, 0))
+                stitched_image.paste(q2_img, (q1_img.width, 0))
+
+            elif file_type == "suFlat":
+                q2_img, q3_img, q4_img = quadrant_images[1:]
+                stitched_image = Image.new('RGBA', (2 * q1_img.width, 2 * q1_img.height))
+                stitched_image.paste(q1_img, (0, 0))
+                stitched_image.paste(q2_img, (q1_img.width, 0))
+                stitched_image.paste(q3_img, (0, q1_img.height))
+                stitched_image.paste(q4_img, (q1_img.width, q1_img.height))
+
+            timestamp = files[0]['name'].split('-')[2]
+            output_path = os.path.join(DOWNLOAD_FOLDER, f"stitched-{file_type}-{timestamp}.png")
+            stitched_image.save(output_path)
+            return output_path, timestamp
+
+        def upload_to_drive(drive_service, file_path, file_name, folder_id):
+            media = MediaFileUpload(file_path, mimetype='image/png')
+            file_metadata = {'name': file_name, 'parents': [folder_id]}
+            file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            print(f"Uploaded stitched image: {file_name} to Google Drive (ID: {file['id']})")
+
+        def delete_files(drive_service, files):
+            for file in files.values():g
+                drive_service.files().delete(fileId=file['id']).execute()
+                print(f"Deleted file: {file['name']}")
+
+        drive_service = authenticate_drive()
+        files = list_png_files(drive_service, os.getenv('FOLDER_ID'))
+
+        if not files:
+            print("No PNG files found.")
+            exit(0)
+
+        grouped_files = group_files_by_quadrants(files)
+        print(f"Found {len(grouped_files)} groups of quadrant images.")
+
+        for file_type, group in grouped_files:
+            try:
+                stitched_path, timestamp = stitch_images(file_type, group)
+                upload_to_drive(drive_service, stitched_path, f"stitched-{file_type}-{timestamp}.png", os.getenv('UPLOAD_FOLDER_ID'))
+                delete_files(drive_service, group)
+            except Exception as e:
+                print(f"Error processing group: {e}")
+        EOF
+        
+    - name: Clean up local files
+      run: |
+        rm -rf downloaded_images
+        echo "Cleaned up the local download folder."
+
