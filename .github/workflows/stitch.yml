@@ -64,11 +64,15 @@ jobs:
                 parts = file['name'].split('-')
                 print(f"Parts of {file['name']}: {parts}")  # Debugging line
                 
-                if len(parts) < 4 or not parts[3].endswith("delta.png"):
+                if len(parts) < 8 or not parts[-1].endswith("delta.png"):
                     continue
         
-                # Adjusted to correctly parse based on the filename pattern
-                quadrant, file_type, timestamp = parts[0], parts[1], parts[2]
+                # Corrected parsing based on filename pattern
+                quadrant = parts[0]
+                file_type = parts[1]
+                timestamp = '-'.join(parts[2:7])  # Join the timestamp parts
+        
+                print(f"Extracted: quadrant={quadrant}, file_type={file_type}, timestamp={timestamp}")
         
                 if file_type in grouped_by_type and quadrant in grouped_by_type[file_type]:
                     grouped_by_type[file_type][quadrant].append((timestamp, file))
