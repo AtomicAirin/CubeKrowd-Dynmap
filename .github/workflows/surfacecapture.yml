@@ -47,6 +47,9 @@ jobs:
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaFileUpload
         from PIL import Image
+
+        # Prevent PIL error for large images
+        Image.MAX_IMAGE_PIXELS = 933120000
         
         # Authenticate with the service account
         credentials = Credentials.from_service_account_file('/tmp/service_account.json')
