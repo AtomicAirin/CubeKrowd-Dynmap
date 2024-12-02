@@ -10,4 +10,6 @@ Image formats:
 
 `Q#-suFormat-{timestamp}.png` are quadrants of the map's delta that are stiched into `stitched-suFormat-{timestamp}.png` -- IS included in stitched form
 
+`-delta.png` suffix indicates it is a delta from the prior version (note initial map also has this suffix)
+
 `-master.png` suffix indicates it is the latest full map save, from which map deltas are determined
