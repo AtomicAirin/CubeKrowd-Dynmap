@@ -27,6 +27,8 @@ jobs:
         FOLDER_ID: '1cbUN2hhnB7euzZ3HmVcUjXq-Ve4pT6rV'
         UPLOAD_FOLDER_ID: '1cbUN2hhnB7euzZ3HmVcUjXq-Ve4pT6rV'
       run: |
+        echo "$GDRIVE_KEY" > /tmp/service_account.json
+      
         python - <<'EOF'
         import os
         from google.oauth2.service_account import Credentials
@@ -41,7 +43,7 @@ jobs:
         os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
         def authenticate_drive():
-            credentials = Credentials.from_service_account_file(os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
+            credentials = Credentials.from_service_account_file('/tmp/service_account.json')
             drive_service = build('drive', 'v3', credentials=credentials)
             return drive_service
         
