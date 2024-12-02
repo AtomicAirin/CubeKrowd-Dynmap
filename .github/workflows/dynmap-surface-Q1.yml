@@ -1,4 +1,4 @@
-name: TEST Quadrant 3 Surface
+name: TEST Quadrant 1 Surface
 
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ jobs:
     - name: Capture cr spawn
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival surface [-2548,64,2532] [58,58] 1 assets/Q3-suSurface-${timestamp}.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival surface [-2548,64,2532] [58,58] 1 assets/Q1-suSurface-${timestamp}.png
 
     - name: Upload to Google Drive
       env:
