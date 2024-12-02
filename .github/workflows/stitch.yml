@@ -118,7 +118,7 @@ jobs:
             print(f"Uploaded stitched image: {file_name} to Google Drive (ID: {file['id']})")
 
         def delete_files(drive_service, files):
-            for file in files.values():g
+            for file in files.values():
                 drive_service.files().delete(fileId=file['id']).execute()
                 print(f"Deleted file: {file['name']}")
 
