@@ -37,6 +37,9 @@ jobs:
         from PIL import Image
         import os
 
+        # Prevent PIL error for large images
+        Image.MAX_IMAGE_PIXELS = 933120000
+
         # Locate the captured image
         input_dir = "assets"
         for filename in os.listdir(input_dir):
