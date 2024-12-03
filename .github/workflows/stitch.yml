@@ -86,17 +86,24 @@ jobs:
         
             # Assemble groups for each file type
             for file_type, quadrants in grouped_by_type.items():
-                # Only create groups if all quadrants for the type have files
-                min_group_count = min(len(files) for files in quadrants.values() if files) if quadrants else 0
-                
-                if min_group_count > 0 and all(quadrants[quadrant] for quadrant in quadrants):  # Ensure all quadrants have files
-                    for i in range(min_group_count):
-                        group = {}
-                        for quadrant in quadrants:
-                            group[quadrant] = quadrants[quadrant][i][1]  # Get the file for the i-th group in each quadrant
-                        grouped.append((file_type, group))
-        
+                for quadrant, files_in_quadrant in quadrants.items():
+                    # Exclude empty lists and calculate the minimum group count
+                    non_empty_files = [files for files in quadrants.values() if files]  # Filter out empty lists
+                    if non_empty_files:
+                        min_group_count = min(len(files_in_quadrant) for files_in_quadrant in non_empty_files)
+                    else:
+                        min_group_count = 0
+                    
+                    # Proceed with grouping only if there are enough files
+                    if min_group_count > 0:
+                        for i in range(min_group_count):
+                            group = {}
+                            for quadrant in quadrants:
+                                group[quadrant] = quadrants[quadrant][i][1]  # Get the file for the i-th group in each quadrant
+                            grouped.append((file_type, group))
+            
             return grouped
+
 
         def download_file(drive_service, file_id, file_name):
             request = drive_service.files().get_media(fileId=file_id)
