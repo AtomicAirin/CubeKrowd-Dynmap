@@ -68,8 +68,8 @@ jobs:
                 if len(parts) < 8 or not parts[-1].endswith("delta.png"):
                     continue
         
-                quadrant = parts[0]
-                file_type = parts[1]
+                file_type = parts[0]
+                quadrant = parts[1]
                 timestamp = '-'.join(parts[2:7])
         
                 print(f"Extracted: quadrant={quadrant}, file_type={file_type}, timestamp={timestamp}")

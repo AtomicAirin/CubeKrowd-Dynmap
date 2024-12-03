@@ -1,7 +1,9 @@
-name: TEST Quadrant 2 Flat
+name: Flat Q2
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '50 */2 * * *'
 
 jobs:
   update-dynmap-images:
@@ -29,7 +31,7 @@ jobs:
     - name: Capture region
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [2532,64,-2532] [40,40] 1 assets/Q2-suFlat-${timestamp}.png
+        dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [2532,64,-2532] [40,40] 1 assets/suFlat-Q2-${timestamp}.png
 
     - name: Crop image
       run: |
@@ -53,9 +55,10 @@ jobs:
                     cropped.save(input_path)
         EOF
 
-    - name: Upload to Google Drive
+    - name: Upload and process with master
       env:
         GDRIVE_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT }}
+        TIMESTAMP: ${{ env.timestamp }}
       run: |
         echo "$GDRIVE_KEY" > /tmp/service_account.json
 
@@ -64,17 +67,99 @@ jobs:
         from google.oauth2.service_account import Credentials
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaFileUpload
+        from PIL import Image
 
+        # Prevent PIL error for large images
+        Image.MAX_IMAGE_PIXELS = 933120000
+        
         # Authenticate with the service account
         credentials = Credentials.from_service_account_file('/tmp/service_account.json')
         drive_service = build('drive', 'v3', credentials=credentials)
-
+        
         # Define the folder ID (replace with your folder ID)
         folder_id = "1cbUN2hhnB7euzZ3HmVcUjXq-Ve4pT6rV"
-
-        # Upload files
-        for filename in os.listdir('assets'):
-            file_metadata = {'name': filename, 'parents': [folder_id]}
-            media = MediaFileUpload(f'assets/{filename}', mimetype='image/png')
-            drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        
+        # Get the timestamp
+        timestamp = os.getenv('TIMESTAMP')
+        
+        # Check for an existing master file
+        results = drive_service.files().list(
+            q=f"'me' in owners and name contains 'suFlat-Q2' and name contains '-master'",
+            fields="files(id, name)"
+        ).execute()
+        master_file = next(iter(results.get('files', [])), None)
+        
+        # Path to the new image
+        new_image_path = f'assets/suFlat-Q2-{timestamp}.png'
+        new_master_path = f'assets/suFlat-Q2-{timestamp}-master.png'
+        
+        # If no master exists, save the new image as master and copy
+        if not master_file:
+            # Copy the new image as the master
+            new_master_path = f'assets/suFlat-Q2-{timestamp}-master.png'
+            import shutil
+            shutil.copyfile(new_image_path, new_master_path)
+            
+            # Upload the new image and the new master
+            for file_path in [new_image_path, new_master_path]:
+                file_metadata = {'name': os.path.basename(file_path), 'parents': [folder_id]}
+                media = MediaFileUpload(file_path, mimetype='image/png')
+                drive_service.files().create(body=file_metadata, media_body=media).execute()
+        else:
+            # Download the master file
+            master_id = master_file['id']
+            master_path = 'assets/master.png'
+            print(f"Downloading master file with ID: {master_id}")
+            request = drive_service.files().get_media(fileId=master_id)
+            with open(master_path, 'wb') as f:
+                file_data = request.execute()
+                f.write(file_data)
+            print(f"Downloaded master file to: {master_path}")
+            
+            # Ensure the master image exists and is opened correctly
+            if not os.path.exists(master_path):
+                raise FileNotFoundError(f"Master file was not downloaded correctly to: {master_path}")
+            
+            # Open the images
+            master_img = Image.open(master_path).convert("RGBA")
+            new_img = Image.open(new_image_path).convert("RGBA")
+        
+            # Create a new image for the delta with the same size and mode
+            delta_img = Image.new("RGBA", master_img.size)
+        
+            # Get the pixels of both images and the delta image
+            master_pixels = master_img.load()
+            new_pixels = new_img.load()
+            delta_pixels = delta_img.load()
+        
+            # Compare pixel by pixel
+            for x in range(master_img.width):
+                for y in range(master_img.height):
+                    # If the pixel from the new image is different from the master image
+                    if master_pixels[x, y] != new_pixels[x, y]:
+                        # Set the new image pixel in the delta image
+                        delta_pixels[x, y] = new_pixels[x, y]
+                    else:
+                        # Set transparency for matching pixels
+                        delta_pixels[x, y] = (0, 0, 0, 0)  # Fully transparent
+        
+            # Save the delta and new master locally
+            delta_path = f'assets/suFlat-Q2-{timestamp}-delta.png'
+            delta_img.save(delta_path, "PNG")
+            print(f"Saved delta image to: {delta_path}")
+            
+            # Rename the new image as the master
+            os.rename(new_image_path, new_master_path)
+            print(f"Renamed new image to master: {new_master_path}")
+            
+            # Upload the delta and new master
+            for file_path in [delta_path, new_master_path]:
+                file_metadata = {'name': os.path.basename(file_path), 'parents': [folder_id]}
+                media = MediaFileUpload(file_path, mimetype='image/png')
+                drive_service.files().create(body=file_metadata, media_body=media).execute()
+                print(f"Uploaded {file_path} to Google Drive")
+            
+            # Delete the old master
+            drive_service.files().delete(fileId=master_id).execute()
+            print(f"Deleted old master with ID: {master_id}")
         EOF
