@@ -79,29 +79,29 @@ jobs:
         
             print(f"Grouped files: {grouped_by_type}")  # Debugging line
         
+            # Use a set to ensure unique groupings
+            unique_groups = set()
+        
             # Sort the files within each quadrant by timestamp
             for file_type, quadrants in grouped_by_type.items():
                 for quadrant, files_in_quadrant in quadrants.items():
                     files_in_quadrant.sort(key=lambda x: x[0])
         
-            # Assemble groups for each file type
-            for file_type, quadrants in grouped_by_type.items():
-                for quadrant, files_in_quadrant in quadrants.items():
-                    # Exclude empty lists and calculate the minimum group count
-                    non_empty_files = [files for files in quadrants.values() if files]  # Filter out empty lists
-                    if non_empty_files:
-                        min_group_count = min(len(files_in_quadrant) for files_in_quadrant in non_empty_files)
-                    else:
-                        min_group_count = 0
-                    
-                    # Proceed with grouping only if there are enough files
-                    if min_group_count > 0:
-                        for i in range(min_group_count):
-                            group = {}
-                            for quadrant in quadrants:
-                                group[quadrant] = quadrants[quadrant][i][1]  # Get the file for the i-th group in each quadrant
-                            grouped.append((file_type, group))
-            print(grouped) # Debugging line
+                # Proceed with grouping only if there are enough files
+                if all(quadrants[q] for q in quadrants):  # Ensure all required quadrants have files
+                    min_group_count = min(len(quadrants[q]) for q in quadrants)
+                    for i in range(min_group_count):
+                        group = {q: quadrants[q][i][1] for q in quadrants}
+                        group_tuple = (file_type, tuple((k, v['id']) for k, v in group.items()))  # Convert to hashable tuple
+                        unique_groups.add(group_tuple)
+        
+            # Convert the unique groups back to the desired list format
+            for group_tuple in unique_groups:
+                file_type = group_tuple[0]
+                group = {item[0]: {'id': item[1], 'name': [f['name'] for f in files if f['id'] == item[1]][0]} for item in group_tuple[1]}
+                grouped.append((file_type, group))
+        
+            print(f"Final grouped files (unique): {grouped}")  # Debugging line
             return grouped
 
 
