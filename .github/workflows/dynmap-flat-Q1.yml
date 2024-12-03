@@ -31,6 +31,7 @@ jobs:
     - name: Capture region
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
+        echo "timestamp=$timestamp" >> $GITHUB_ENV
         dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival flat [-2532,64,-2532] [40,40] 1 assets/suFlat-Q1-${timestamp}.png
 
     - name: Crop image
