@@ -60,17 +60,17 @@ jobs:
             grouped_by_type = {'suFlat': {'Q1': [], 'Q2': [], 'Q3': [], 'Q4': []},
                                'suSurface': {'Q1': [], 'Q2': []}}
         
+            # Group files by type and quadrant
             for file in files:
                 parts = file['name'].split('-')
                 print(f"Parts of {file['name']}: {parts}")  # Debugging line
-                
+        
                 if len(parts) < 8 or not parts[-1].endswith("delta.png"):
                     continue
         
-                # Corrected parsing based on filename pattern
                 quadrant = parts[0]
                 file_type = parts[1]
-                timestamp = '-'.join(parts[2:7])  # Join the timestamp parts
+                timestamp = '-'.join(parts[2:7])
         
                 print(f"Extracted: quadrant={quadrant}, file_type={file_type}, timestamp={timestamp}")
         
@@ -79,12 +79,22 @@ jobs:
         
             print(f"Grouped files: {grouped_by_type}")  # Debugging line
         
+            # Sort the files within each quadrant by timestamp
             for file_type, quadrants in grouped_by_type.items():
-                # Ensure there are no missing quadrants before creating groups
-                min_group_count = min(len(quadrants[key]) for key in quadrants)
-                for i in range(min_group_count):
-                    group = {key: quadrants[key][i][1] for key in quadrants}
-                    grouped.append((file_type, group))
+                for quadrant, files_in_quadrant in quadrants.items():
+                    files_in_quadrant.sort(key=lambda x: x[0])
+        
+            # Assemble groups for each file type
+            for file_type, quadrants in grouped_by_type.items():
+                # Only create groups if all quadrants for the type have files
+                min_group_count = min(len(quadrants[key]) for key in quadrants if quadrants[key])  # Avoid empty lists
+                
+                if min_group_count > 0:  # If there are enough files to form complete sets
+                    for i in range(min_group_count):
+                        group = {}
+                        for quadrant in quadrants:
+                            group[quadrant] = quadrants[quadrant][i][1]  # Get the file for the i-th group in each quadrant
+                        grouped.append((file_type, group))
         
             return grouped
 
@@ -119,7 +129,7 @@ jobs:
                 stitched_image.paste(q3_img, (0, q1_img.height))
                 stitched_image.paste(q4_img, (q1_img.width, q1_img.height))
 
-            timestamp = files[0]['name'].split('-')[2]
+            timestamp = '-'.join(files[0]['name'].split('-')[2:7])
             output_path = os.path.join(DOWNLOAD_FOLDER, f"stitched-{file_type}-{timestamp}.png")
             stitched_image.save(output_path)
             return output_path, timestamp
