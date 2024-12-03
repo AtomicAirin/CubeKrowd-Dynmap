@@ -101,7 +101,7 @@ jobs:
                             for quadrant in quadrants:
                                 group[quadrant] = quadrants[quadrant][i][1]  # Get the file for the i-th group in each quadrant
                             grouped.append((file_type, group))
-            
+            print(grouped) # Debugging line
             return grouped
 
 
