@@ -52,7 +52,7 @@ jobs:
             results = drive_service.files().list(q=query, fields="files(id, name)").execute()
             files = results.get('files', [])
             # Filter files that have valid quadrant identifiers (e.g., Q1, Q2, Q3, Q4)
-            valid_quadrant_files = [file for file in files if file['name'].split('-')[0] in {'Q1', 'Q2', 'Q3', 'Q4'}]
+            valid_quadrant_files = [file for file in files if file['name'].split('-')[1] in {'Q1', 'Q2', 'Q3', 'Q4'}]
             return valid_quadrant_files
 
         def group_files_by_quadrants(files):
