@@ -31,6 +31,7 @@ jobs:
     - name: Capture cr spawn
       run: |
         timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
+        echo "timestamp=$timestamp" >> $GITHUB_ENV
         dynmap-lens.py -v https://dynmap.cubekrowd.net/ survival surface [-2548,64,2532] [58,58] 1 assets/suSurface-Q1-${timestamp}.png
 
     - name: Upload and process with master
