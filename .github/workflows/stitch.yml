@@ -87,9 +87,9 @@ jobs:
             # Assemble groups for each file type
             for file_type, quadrants in grouped_by_type.items():
                 # Only create groups if all quadrants for the type have files
-                min_group_count = min(len(quadrants[key]) for key in quadrants if quadrants[key])  # Avoid empty lists
+                min_group_count = min(len(files) for files in quadrants.values() if files) if quadrants else 0
                 
-                if min_group_count > 0:  # If there are enough files to form complete sets
+                if min_group_count > 0 and all(quadrants[quadrant] for quadrant in quadrants):  # Ensure all quadrants have files
                     for i in range(min_group_count):
                         group = {}
                         for quadrant in quadrants:
