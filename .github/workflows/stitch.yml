@@ -159,7 +159,7 @@ jobs:
             try:
                 stitched_path, timestamp = stitch_images(file_type, group)
                 upload_to_drive(drive_service, stitched_path, f"stitched-{file_type}-{timestamp}.png", os.getenv('UPLOAD_FOLDER_ID'))
-                delete_files(drive_service, group)
+                # delete_files(drive_service, group)
             except Exception as e:
                 print(f"Error processing group: {e}")
         EOF
