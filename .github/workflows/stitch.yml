@@ -51,7 +51,11 @@ jobs:
         
         def list_png_files(drive_service, folder_id):
             query = f"'{folder_id}' in parents and mimeType='image/png' and name contains '-delta.png'"
-            results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+            results = drive_service.files().list(
+                q=query,
+                pageSize=1000,  # Set the page size to the maximum allowed
+                fields="files(id, name)"
+            ).execute()
             files = results.get('files', [])
             # Filter files that have valid quadrant identifiers (e.g., Q1, Q2, Q3, Q4)
             valid_quadrant_files = [file for file in files if file['name'].split('-')[1] in {'Q1', 'Q2', 'Q3', 'Q4'}]
