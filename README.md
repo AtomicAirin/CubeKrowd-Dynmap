@@ -1,6 +1,6 @@
 # CubeKrowd Dynmap
 
-Image formats:
+Image format info:
 
 `suSurface-{timestamp}.png` and `suFlat-{timestamp}.png` are original zoomed in version -- IS included in timelapse but needs special treatment
 
